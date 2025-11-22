@@ -35,7 +35,7 @@ const CreateFormClient = ({ amenities }: CreateRoomFormClientProps) => {
     saveRoom.bind(null, image),
     null
   );
-  
+
   useEffect(() => {
     if (state?.success) {
       router.push(
@@ -153,12 +153,12 @@ const CreateFormClient = ({ amenities }: CreateRoomFormClientProps) => {
           <label
             htmlFor="input-file"
             className={clsx(
-              "flex flex-col mb-4 items-center justify-center aspect-video border-2 border-gray-300 border-dashed rounded-md cursor-pointer bg-gray-50 relative",
-              { "border-red-300": message || state?.error?.image }
+              "flex flex-col mb-4 items-center justify-center aspect-video border-2 border-gray-300 border-dashed rounded-md cursor-pointer bg-gray-50 relative"
             )}
           >
             <div className="flex flex-col items-center justify-center text-gray-500 pt-5 pb-6 z-10">
               {pending ? <BarLoader /> : null}
+
               {image ? (
                 <button
                   type="button"
@@ -171,19 +171,35 @@ const CreateFormClient = ({ amenities }: CreateRoomFormClientProps) => {
                 <div className="flex flex-col items-center justify-center">
                   <IoCloudUploadOutline className="size-8" />
                   <p className="mb-1 text-sm font-bold">Select Image</p>
+
                   <div aria-live="polite" aria-atomic="true">
                     <span className="text-sm mt-2 text-red-500">
-                      {message || state?.error?.image?.[0]}
+                      {message ||
+                        ((): string | null => {
+                          const imgErr = (state as any)?.error?.image;
+                          if (!imgErr) return null;
+                          if (Array.isArray(imgErr)) return imgErr[0] ?? null;
+                          if (typeof imgErr === "string") return imgErr;
+                          // fallback: try to stringify if it's an object
+                          try {
+                            return String(imgErr);
+                          } catch {
+                            return null;
+                          }
+                        })()}
                     </span>
                   </div>
-                  {!message && !state?.error?.image && (
+
+                  {/* hint only when no message and no image error */}
+                  {!message && !(state as any)?.error?.image && (
                     <p className="text-xs">
-                      SVG, PNG, JPG, GIF, or Others (Max: 4mb, Size: 16:9)
+                      PNG, JPG, GIF (Max 4mb • Aspect 16:9)
                     </p>
                   )}
                 </div>
               )}
             </div>
+
             {!image && (
               <input
                 type="file"
@@ -193,6 +209,7 @@ const CreateFormClient = ({ amenities }: CreateRoomFormClientProps) => {
                 onChange={handleUpload}
               />
             )}
+
             {image && (
               <Image
                 src={image}
