@@ -54,8 +54,11 @@ const ReservationLists = async () => {
               {formatDate(reserve.endDate.toISOString())}
             </td>
             <td className="px-6 py-4">
-              {formatCurrency(reserve.payment?.amount)}
+              {reserve.payment?.amount != null
+                ? formatCurrency(reserve.payment.amount)
+                : "-"}
             </td>
+
             <td className="px-6 py-4 text-center">
               <div className="flex items-center justify-center gap-1">
                 {reserve.payment?.status}
