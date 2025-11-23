@@ -1,36 +1,41 @@
-import NextAuth from "next-auth";
-import Google from "next-auth/providers/google";
-import { prisma } from "@/lib/prisma";
-import { PrismaAdapter } from "@auth/prisma-adapter";
-import type { Adapter } from "next-auth/adapters";
+import { NextRequest, NextResponse } from "next/server";
+import { getToken } from "next-auth/jwt";
 
-export const { handlers, auth, signIn, signOut } = NextAuth({
-  adapter: PrismaAdapter(prisma) as Adapter,
+export async function middleware(request: NextRequest) {
+  const token = await getToken({
+    req: request,
+    secret: process.env.AUTH_SECRET,
+  });
 
-  providers: [
-    Google({
-      clientId: process.env.GOOGLE_CLIENT_ID!,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
-    }),
+  const pathname = request.nextUrl.pathname;
+  const isLoggedIn = !!token;
+  const role = token?.role;
+
+  const protectedRoutes = ["/reservation", "/checkout", "/admin"];
+
+  // Protect routes
+  if (!isLoggedIn && protectedRoutes.some((r) => pathname.startsWith(r))) {
+    return NextResponse.redirect(new URL("/signin", request.url));
+  }
+
+  // Admin only
+  if (isLoggedIn && role !== "admin" && pathname.startsWith("/admin")) {
+    return NextResponse.redirect(new URL("/", request.url));
+  }
+
+  // Already logged in cannot access signin
+  if (isLoggedIn && pathname.startsWith("/signin")) {
+    return NextResponse.redirect(new URL("/", request.url));
+  }
+
+  return NextResponse.next();
+}
+
+export const config = {
+  matcher: [
+    "/reservation/:path*",
+    "/checkout/:path*",
+    "/admin/:path*",
+    "/signin",
   ],
-
-  session: {
-    strategy: "jwt",
-  },
-
-  pages: {
-    signIn: "/signin",
-  },
-
-  callbacks: {
-    jwt({ token, user }) {
-      if (user) token.role = (user as any).role;
-      return token;
-    },
-    session({ session, token }) {
-      session.user.id = token.sub!;
-      session.user.role = token.role;
-      return session;
-    },
-  },
-});
+};
