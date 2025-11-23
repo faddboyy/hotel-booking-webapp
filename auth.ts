@@ -22,12 +22,17 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     signIn: "/signin",
   },
 
+  secret: process.env.AUTH_SECRET,
+
   callbacks: {
-    jwt({ token, user }) {
-      if (user) token.role = (user as any).role;
+    async jwt({ token, user }) {
+      if (user) {
+        token.role = (user as any).role;
+      }
       return token;
     },
-    session({ session, token }) {
+
+    async session({ session, token }) {
       session.user.id = token.sub!;
       session.user.role = token.role;
       return session;

@@ -13,17 +13,17 @@ export async function middleware(request: NextRequest) {
 
   const protectedRoutes = ["/reservation", "/checkout", "/admin"];
 
-  // Protect routes
+  // Not logged in → redirect
   if (!isLoggedIn && protectedRoutes.some((r) => pathname.startsWith(r))) {
     return NextResponse.redirect(new URL("/signin", request.url));
   }
 
-  // Admin only
+  // Non-admin trying to access /admin
   if (isLoggedIn && role !== "admin" && pathname.startsWith("/admin")) {
     return NextResponse.redirect(new URL("/", request.url));
   }
 
-  // Already logged in cannot access signin
+  // Logged in but trying to open /signin
   if (isLoggedIn && pathname.startsWith("/signin")) {
     return NextResponse.redirect(new URL("/", request.url));
   }
